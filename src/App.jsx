@@ -15,7 +15,6 @@ function App() {
     client: '',
     model: '',
     work: '',
-    work: '',
     cost: '',
     contact: '',
     mileage: ''
@@ -68,7 +67,6 @@ function App() {
             trabajo: formData.work,
             costo: parseFloat(formData.cost) || 0,
             cost: parseFloat(formData.cost) || 0,
-            contacto: formData.contact,
             contacto: formData.contact,
             foto_url: imageUrl,
             estado: 'En proceso',

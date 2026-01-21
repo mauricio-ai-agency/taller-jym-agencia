@@ -9,7 +9,8 @@ export default function EditRecord({ record, onBack, onUpdate }) {
         contacto: record.contacto || '',
         trabajo: record.trabajo || '',
         costo: record.costo || record.cost || 0,
-        estado: record.estado || 'En proceso'
+        estado: record.estado || 'En proceso',
+        kilometraje: record.kilometraje || ''
     });
     const [isSaving, setIsSaving] = useState(false);
 
@@ -32,15 +33,16 @@ export default function EditRecord({ record, onBack, onUpdate }) {
                     contacto: formData.contacto,
                     trabajo: formData.trabajo,
                     costo: parseFloat(formData.costo) || 0,
-                    cost: parseFloat(formData.costo) || 0, // Updating both just in case
-                    estado: formData.estado
+                    cost: parseFloat(formData.costo) || 0,
+                    estado: formData.estado,
+                    kilometraje: formData.kilometraje
                 })
                 .eq('id', record.id);
 
             if (error) throw error;
 
             alert('Registro actualizado correctamente.');
-            onUpdate(); // Navigate back and refresh
+            onUpdate();
         } catch (err) {
             console.error('Error updating:', err);
             alert('Error al actualizar: ' + err.message);
@@ -61,7 +63,7 @@ export default function EditRecord({ record, onBack, onUpdate }) {
 
             <div className="flex-1 overflow-y-auto p-6 space-y-5">
 
-                {/* Placa & Estado */}
+                {/* Placa & Estado & Km */}
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                         <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="placa">Placa</label>
@@ -80,6 +82,15 @@ export default function EditRecord({ record, onBack, onUpdate }) {
                                 <option value="Terminado">Terminado</option>
                             </select>
                         </div>
+                    </div>
+                </div>
+
+                {/* Kilometraje */}
+                <div className="space-y-1.5">
+                    <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="kilometraje">Kilometraje (Km)</label>
+                    <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><Car size={18} /></div>
+                        <input type="number" id="kilometraje" value={formData.kilometraje} onChange={handleInputChange} className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
                     </div>
                 </div>
 
