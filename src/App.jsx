@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Camera, Car, User, FileText, Wrench, DollarSign, Phone, FileDown, Share2, Save } from 'lucide-react';
 import { jsPDF } from "jspdf";
+import imageCompression from 'browser-image-compression';
 import { supabase } from './supabaseClient';
 
 function App() {
@@ -12,7 +13,9 @@ function App() {
     cost: '',
     contact: ''
   });
+  const [imageFile, setImageFile] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef(null);
 
   const handleInputChange = (e) => {
     const { id, value } = e.target;
@@ -30,6 +33,24 @@ function App() {
 
     setIsSaving(true);
     try {
+      let imageUrl = null;
+
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('images')
+          .upload(fileName, imageFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicUrlData } = supabase.storage
+          .from('images')
+          .getPublicUrl(fileName);
+
+        imageUrl = publicUrlData.publicUrl;
+      }
+
       const { data, error } = await supabase
         .from('registros')
         .insert([
@@ -39,13 +60,24 @@ function App() {
             modelo: formData.model,
             trabajo: formData.work,
             costo: parseFloat(formData.cost) || 0,
-            contacto: formData.contact
+            cost: parseFloat(formData.cost) || 0,
+            contacto: formData.contact,
+            foto_url: imageUrl
           }
         ]);
 
       if (error) throw error;
 
       alert('¡Registro guardado exitosamente en la nube!');
+      setFormData({
+        plate: '',
+        client: '',
+        model: '',
+        work: '',
+        cost: '',
+        contact: ''
+      });
+      setImageFile(null);
     } catch (error) {
       console.error('Error saving:', error);
       alert('Error al guardar: ' + error.message);
@@ -134,6 +166,27 @@ function App() {
       const encodedText = encodeURIComponent(shareData.text);
       const waLink = `https://wa.me/${formData.contact.replace(/\D/g, '')}?text=${encodedText}`;
       window.open(waLink, '_blank');
+    }
+  };
+
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const options = {
+      maxSizeMB: 0.2, // 200KB
+      maxWidthOrHeight: 1920,
+      useWebWorker: true,
+    };
+
+    try {
+      const compressedFile = await imageCompression(file, options);
+      setImageFile(compressedFile);
+      console.log(`Original: ${file.size / 1024} KB`);
+      console.log(`Compressed: ${compressedFile.size / 1024} KB`);
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      alert('Error al procesar la imagen.');
     }
   };
 
@@ -237,12 +290,20 @@ function App() {
               )}
             </button>
 
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+            />
             <button
               type="button"
-              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+              onClick={() => fileInputRef.current.click()}
+              className={`w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${imageFile ? 'border-2 border-green-500 bg-green-50' : ''}`}
             >
-              <Camera size={20} />
-              <span>Capturar Foto</span>
+              <Camera size={20} className={imageFile ? 'text-green-600' : ''} />
+              <span>{imageFile ? 'Foto Cargada (Comprimida)' : 'Capturar / Subir Foto'}</span>
             </button>
 
             <div className="grid grid-cols-2 gap-3">
