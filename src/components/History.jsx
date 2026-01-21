@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Trash2, Clock, CheckCircle, Car, User, Calendar, Search } from 'lucide-react';
 
-export default function History() {
+export default function History({ onEditRecord }) {
     const [registros, setRegistros] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -106,7 +106,8 @@ export default function History() {
                 filteredRegistros.map((registro) => (
                     <div
                         key={registro.id}
-                        className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-3"
+                        onClick={() => onEditRecord(registro)}
+                        className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-3 cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]"
                     >
 
                         {/* Header: Date & Status */}

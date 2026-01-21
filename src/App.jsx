@@ -4,9 +4,11 @@ import { jsPDF } from "jspdf";
 import imageCompression from 'browser-image-compression';
 import { supabase } from './supabaseClient';
 import History from './components/History';
+import EditRecord from './components/EditRecord';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('new'); // 'new' | 'history'
+  const [activeTab, setActiveTab] = useState('new'); // 'new' | 'history' | 'edit'
+  const [editingRecord, setEditingRecord] = useState(null);
 
   const [formData, setFormData] = useState({
     plate: '',
@@ -200,7 +202,15 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden mb-10 flex flex-col h-[90vh]">
+  const handleEditRecord = (record) => {
+          setEditingRecord(record);
+        setActiveTab('edit');
+  };
 
+  const handleUpdateRecord = () => {
+          setEditingRecord(null);
+        setActiveTab('history');
+  };
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-700 to-blue-600 p-6 text-center flex-shrink-0">
           <h1 className="text-2xl font-bold text-white tracking-tight">Taller JYM</h1>
@@ -236,7 +246,13 @@ function App() {
 
         {/* Main Content */}
         <div className="flex-1 overflow-y-auto bg-gray-50/50">
-          {activeTab === 'new' ? (
+          {activeTab === 'edit' ? (
+            <EditRecord
+              record={editingRecord}
+              onBack={() => setActiveTab('history')}
+              onUpdate={handleUpdateRecord}
+            />
+          ) : activeTab === 'new' ? (
             <form className="p-6 space-y-5" onSubmit={(e) => e.preventDefault()}>
 
               {/* Section: Vehicle Info */}
@@ -370,7 +386,7 @@ function App() {
             </form>
           ) : (
             <div className="p-4 pb-20">
-              <History />
+              <History onEditRecord={handleEditRecord} />
             </div>
           )}
         </div>
