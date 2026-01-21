@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Trash2, Edit2, Clock, CheckCircle, Car, User, Calendar, Search } from 'lucide-react';
 
-export default function History() {
+export default function History({ onEditRecord }) {
     const [registros, setRegistros] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -29,7 +29,8 @@ export default function History() {
         }
     };
 
-    const deleteRecord = async (id) => {
+    const deleteRecord = async (e, id) => {
+        e.stopPropagation();
         if (!window.confirm('¿Estás seguro de borrar este registro?')) return;
 
         try {
@@ -45,7 +46,8 @@ export default function History() {
         }
     };
 
-    const toggleStatus = async (id, currentStatus) => {
+    const toggleStatus = async (e, id, currentStatus) => {
+        e.stopPropagation();
         const newStatus = currentStatus === 'En proceso' ? 'Terminado' : 'En proceso';
 
         // Optimistic update
@@ -102,7 +104,11 @@ export default function History() {
                 </div>
             ) : (
                 filteredRegistros.map((registro) => (
-                    <div key={registro.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-3">
+                    <div
+                        key={registro.id}
+                        onClick={() => onEditRecord(registro)}
+                        className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-3 cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]"
+                    >
 
                         {/* Header: Date & Status */}
                         <div className="flex justify-between items-start">
@@ -141,7 +147,7 @@ export default function History() {
                         {/* Actions */}
                         <div className="flex justify-end gap-2 pt-2 border-t border-gray-50 mt-1">
                             <button
-                                onClick={() => toggleStatus(registro.id, registro.estado || 'En proceso')}
+                                onClick={(e) => toggleStatus(e, registro.id, registro.estado || 'En proceso')}
                                 className={`flex-1 py-2 px-3 rounded-lg flex items-center justify-center gap-2 text-xs font-bold transition-colors ${registro.estado === 'Terminado'
                                         ? 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
                                         : 'bg-green-50 text-green-700 hover:bg-green-100'
@@ -152,7 +158,7 @@ export default function History() {
                             </button>
 
                             <button
-                                onClick={() => deleteRecord(registro.id)}
+                                onClick={(e) => deleteRecord(e, registro.id)}
                                 className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
                                 title="Borrar registro"
                             >
