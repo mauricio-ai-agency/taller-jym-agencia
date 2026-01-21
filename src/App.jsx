@@ -4,11 +4,9 @@ import { jsPDF } from "jspdf";
 import imageCompression from 'browser-image-compression';
 import { supabase } from './supabaseClient';
 import History from './components/History';
-import EditRecord from './components/EditRecord';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('new'); // 'new' | 'history' | 'edit'
-  const [editingRecord, setEditingRecord] = useState(null);
+  const [activeTab, setActiveTab] = useState('new'); // 'new' | 'history'
 
   const [formData, setFormData] = useState({
     plate: '',
@@ -66,7 +64,6 @@ function App() {
             modelo: formData.model,
             trabajo: formData.work,
             costo: parseFloat(formData.cost) || 0,
-            cost: parseFloat(formData.cost) || 0,
             contacto: formData.contact,
             foto_url: imageUrl,
             estado: 'En proceso',
@@ -200,199 +197,186 @@ function App() {
     }
   };
 
-  const handleEditRecord = (record) => {
-    setEditingRecord(record);
-    setActiveTab('edit');
-  };
-
-  const handleUpdateRecord = () => {
-    setEditingRecord(null);
-    setActiveTab('history');
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden mb-10 flex flex-col h-[90vh]">
 
-        {/* Content Area - Scrollable */}
-        <div className="flex-1 overflow-y-auto bg-gray-50/50 flex flex-col">
-          {activeTab === 'edit' ? (
-            <EditRecord
-              record={editingRecord}
-              onBack={() => setActiveTab('history')}
-              onUpdate={handleUpdateRecord}
-            />
-          ) : (
-            <>
-              {/* Header for non-edit views */}
-              <div className="bg-gradient-to-r from-blue-700 to-blue-600 p-6 text-center flex-shrink-0">
-                <h1 className="text-2xl font-bold text-white tracking-tight">Taller JYM</h1>
-                <div className="flex items-center justify-center gap-2 text-blue-100 mt-1">
-                  <Car size={16} />
-                  <span className="font-medium">Gestión de Taller</span>
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-700 to-blue-600 p-6 text-center flex-shrink-0">
+          <h1 className="text-2xl font-bold text-white tracking-tight">Taller JYM</h1>
+          <div className="flex items-center justify-center gap-2 text-blue-100 mt-1">
+            <Car size={16} />
+            <span className="font-medium">Gestión de Taller</span>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-gray-100 flex-shrink-0 bg-white">
+          <button
+            onClick={() => setActiveTab('new')}
+            className={`flex-1 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${activeTab === 'new'
+              ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
+              : 'text-gray-400 hover:text-gray-600'
+              }`}
+          >
+            <PlusCircle size={18} />
+            Nuevo Ingreso
+          </button>
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`flex-1 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${activeTab === 'history'
+              ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
+              : 'text-gray-400 hover:text-gray-600'
+              }`}
+          >
+            <HistoryIcon size={18} />
+            Historial
+          </button>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 overflow-y-auto bg-gray-50/50">
+          {activeTab === 'new' ? (
+            <form className="p-6 space-y-5" onSubmit={(e) => e.preventDefault()}>
+
+              {/* Section: Vehicle Info */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider border-b pb-1">Datos del Vehículo</h3>
+
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="plate">Placa</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><Car size={18} /></div>
+                    <input type="text" id="plate" value={formData.plate} onChange={handleInputChange} placeholder="Ej: ABC-123" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none uppercase font-medium" />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="model">Modelo</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><Car size={18} /></div>
+                    <input type="text" id="model" value={formData.model} onChange={handleInputChange} placeholder="Ej: Toyota Corolla 2020" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="mileage">Km</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><Car size={18} /></div>
+                    <input type="number" id="mileage" value={formData.mileage} onChange={handleInputChange} placeholder="Ej: 50000" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+                  </div>
                 </div>
               </div>
 
-              {/* Tabs for non-edit views */}
-              <div className="flex border-b border-gray-100 flex-shrink-0 bg-white">
-                <button
-                  onClick={() => setActiveTab('new')}
-                  className={`flex-1 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${activeTab === 'new'
-                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
-                    : 'text-gray-400 hover:text-gray-600'
-                    }`}
-                >
-                  <PlusCircle size={18} />
-                  Nuevo Ingreso
-                </button>
-                <button
-                  onClick={() => setActiveTab('history')}
-                  className={`flex-1 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${activeTab === 'history'
-                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
-                    : 'text-gray-400 hover:text-gray-600'
-                    }`}
-                >
-                  <HistoryIcon size={18} />
-                  Historial
-                </button>
-              </div>
+              {/* Section: Client Info */}
+              <div className="space-y-4 pt-2">
+                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider border-b pb-1">Datos del Cliente</h3>
 
-              {/* Main Content */}
-              <div className="flex-1 overflow-y-auto bg-gray-50/50">
-                {activeTab === 'new' ? (
-                  <form className="p-6 space-y-5" onSubmit={(e) => e.preventDefault()}>
-
-                    {/* Section: Vehicle Info */}
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider border-b pb-1">Datos del Vehículo</h3>
-
-                      <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="plate">Placa</label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><Car size={18} /></div>
-                          <input type="text" id="plate" value={formData.plate} onChange={handleInputChange} placeholder="Ej: ABC-123" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none uppercase font-medium" />
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="model">Modelo</label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><Car size={18} /></div>
-                          <input type="text" id="model" value={formData.model} onChange={handleInputChange} placeholder="Ej: Toyota Corolla 2020" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Section: Client Info */}
-                    <div className="space-y-4 pt-2">
-                      <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider border-b pb-1">Datos del Cliente</h3>
-
-                      <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="client">Nombre</label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><User size={18} /></div>
-                          <input type="text" id="client" value={formData.client} onChange={handleInputChange} placeholder="Nombre completo" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="contact">WhatsApp / Contacto</label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><Phone size={18} /></div>
-                          <input type="tel" id="contact" value={formData.contact} onChange={handleInputChange} placeholder="+569..." className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Section: Work Details */}
-                    <div className="space-y-4 pt-2">
-                      <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider border-b pb-1">Detalles del Servicio</h3>
-
-                      <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="work">Trabajo a realizar</label>
-                        <div className="relative">
-                          <div className="absolute top-3 left-3 text-gray-400"><Wrench size={18} /></div>
-                          <textarea id="work" value={formData.work} onChange={handleInputChange} placeholder="Descripción detallada de la reparación..." rows="3" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium resize-none"></textarea>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="cost">Costo Estimado</label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><DollarSign size={18} /></div>
-                          <input type="number" id="cost" value={formData.cost} onChange={handleInputChange} placeholder="0" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="pt-4 space-y-3 pb-6">
-                      <button
-                        type="button"
-                        onClick={handleSave}
-                        disabled={isSaving}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-md flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
-                      >
-                        {isSaving ? (
-                          <>
-                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            <span>Guardando...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Save size={20} />
-                            <span>Guardar Registro en Nube</span>
-                          </>
-                        )}
-                      </button>
-
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        ref={fileInputRef}
-                        onChange={handleImageUpload}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current.click()}
-                        className={`w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${imageFile ? 'border-2 border-green-500 bg-green-50' : ''}`}
-                      >
-                        <Camera size={20} className={imageFile ? 'text-green-600' : ''} />
-                        <span>{imageFile ? 'Foto Cargada (Comprimida)' : 'Capturar / Subir Foto'}</span>
-                      </button>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <button
-                          type="button"
-                          onClick={generatePDF}
-                          className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 transition-all active:scale-95 text-sm"
-                        >
-                          <FileDown size={18} />
-                          <span>PDF</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={handleShare}
-                          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 transition-all active:scale-95 text-sm"
-                        >
-                          <Share2 size={18} />
-                          <span>Enviar</span>
-                        </button>
-                      </div>
-                    </div>
-                  </form>
-                ) : (
-                  <div className="p-4 pb-20">
-                    <History onEditRecord={handleEditRecord} />
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="client">Nombre</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><User size={18} /></div>
+                    <input type="text" id="client" value={formData.client} onChange={handleInputChange} placeholder="Nombre completo" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
                   </div>
-                )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="contact">WhatsApp / Contacto</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><Phone size={18} /></div>
+                    <input type="tel" id="contact" value={formData.contact} onChange={handleInputChange} placeholder="+569..." className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+                  </div>
+                </div>
               </div>
-            </>
+
+              {/* Section: Work Details */}
+              <div className="space-y-4 pt-2">
+                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider border-b pb-1">Detalles del Servicio</h3>
+
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="work">Trabajo a realizar</label>
+                  <div className="relative">
+                    <div className="absolute top-3 left-3 text-gray-400"><Wrench size={18} /></div>
+                    <textarea id="work" value={formData.work} onChange={handleInputChange} placeholder="Descripción detallada de la reparación..." rows="3" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium resize-none"></textarea>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="cost">Costo Estimado</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><DollarSign size={18} /></div>
+                    <input type="number" id="cost" value={formData.cost} onChange={handleInputChange} placeholder="0" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="pt-4 space-y-3 pb-6">
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-md flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {isSaving ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Guardando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save size={20} />
+                      <span>Guardar Registro en Nube</span>
+                    </>
+                  )}
+                </button>
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleImageUpload}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current.click()}
+                  className={`w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${imageFile ? 'border-2 border-green-500 bg-green-50' : ''}`}
+                >
+                  <Camera size={20} className={imageFile ? 'text-green-600' : ''} />
+                  <span>{imageFile ? 'Foto Cargada (Comprimida)' : 'Capturar / Subir Foto'}</span>
+                </button>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={generatePDF}
+                    className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 transition-all active:scale-95 text-sm"
+                  >
+                    <FileDown size={18} />
+                    <span>PDF</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 transition-all active:scale-95 text-sm"
+                  >
+                    <Share2 size={18} />
+                    <span>Enviar</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+          ) : (
+            <div className="p-4 pb-20">
+              <History />
+            </div>
           )}
         </div>
       </div>
     </div>
   );
 }
+
+export default App;
