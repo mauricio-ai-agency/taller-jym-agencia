@@ -199,18 +199,19 @@ function App() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden mb-10 flex flex-col h-[90vh]">
   const handleEditRecord = (record) => {
-          setEditingRecord(record);
-        setActiveTab('edit');
+    setEditingRecord(record);
+    setActiveTab('edit');
   };
 
   const handleUpdateRecord = () => {
-          setEditingRecord(null);
-        setActiveTab('history');
+    setEditingRecord(null);
+    setActiveTab('history');
   };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden mb-10 flex flex-col h-[90vh]">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-700 to-blue-600 p-6 text-center flex-shrink-0">
           <h1 className="text-2xl font-bold text-white tracking-tight">Taller JYM</h1>
