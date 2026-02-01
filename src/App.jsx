@@ -17,7 +17,8 @@ function App() {
     work: '',
     cost: '',
     contact: '',
-    mileage: ''
+    mileage: '',
+    repuestos: ''
   });
   const [imageFile, setImageFile] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -69,7 +70,8 @@ function App() {
             contacto: formData.contact,
             foto_url: imageUrl,
             estado: 'En proceso',
-            kilometraje: formData.mileage
+            kilometraje: formData.mileage,
+            repuestos: formData.repuestos
           }
         ]);
 
@@ -83,7 +85,8 @@ function App() {
         work: '',
         cost: '',
         contact: '',
-        mileage: ''
+        mileage: '',
+        repuestos: ''
       });
       setImageFile(null);
       setActiveTab('history'); // Switch to history after saving
@@ -146,6 +149,17 @@ function App() {
     const splitWork = doc.splitTextToSize(formData.work, 170);
     doc.text(splitWork, 20, yPos);
     yPos += (splitWork.length * 7) + lineHeight;
+
+    if (formData.repuestos) {
+      doc.setFont("helvetica", "bold");
+      doc.text("Repuestos / Notas:", 20, yPos);
+      yPos += lineHeight;
+      doc.setFont("helvetica", "normal");
+
+      const splitParts = doc.splitTextToSize(formData.repuestos, 170);
+      doc.text(splitParts, 20, yPos);
+      yPos += (splitParts.length * 7) + lineHeight;
+    }
 
     doc.setFont("helvetica", "bold");
     doc.text(`Costo Estimado: $${formData.cost}`, 20, yPos);
@@ -315,6 +329,14 @@ function App() {
                   <div className="relative">
                     <div className="absolute top-3 left-3 text-gray-400"><Wrench size={18} /></div>
                     <textarea id="work" value={formData.work} onChange={handleInputChange} placeholder="Descripción detallada de la reparación..." rows="3" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium resize-none"></textarea>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="repuestos">Repuestos</label>
+                  <div className="relative">
+                    <div className="absolute top-3 left-3 text-gray-400"><Wrench size={18} /></div>
+                    <textarea id="repuestos" value={formData.repuestos} onChange={handleInputChange} placeholder="Lista de repuestos..." rows="2" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium resize-none"></textarea>
                   </div>
                 </div>
 

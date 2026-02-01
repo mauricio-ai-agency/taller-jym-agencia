@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Save, ArrowLeft, Car, User, Phone, Wrench, DollarSign, Activity } from 'lucide-react';
+import { Save, ArrowLeft, Car, User, Phone, Wrench, DollarSign, Activity, FileDown } from 'lucide-react';
+import { jsPDF } from "jspdf";
 import { supabase } from '../supabaseClient';
 
 export default function EditRecord({ record, onBack, onUpdate }) {
@@ -10,7 +11,8 @@ export default function EditRecord({ record, onBack, onUpdate }) {
         trabajo: record.trabajo || '',
         costo: record.costo || record.cost || 0,
         estado: record.estado || 'En proceso',
-        kilometraje: record.kilometraje || ''
+        kilometraje: record.kilometraje || '',
+        repuestos: record.repuestos || ''
     });
     const [isSaving, setIsSaving] = useState(false);
 
@@ -35,7 +37,8 @@ export default function EditRecord({ record, onBack, onUpdate }) {
                     costo: parseFloat(formData.costo) || 0,
                     cost: parseFloat(formData.costo) || 0,
                     estado: formData.estado,
-                    kilometraje: formData.kilometraje
+                    kilometraje: formData.kilometraje,
+                    repuestos: formData.repuestos
                 })
                 .eq('id', record.id);
 
@@ -121,6 +124,14 @@ export default function EditRecord({ record, onBack, onUpdate }) {
                 </div>
 
                 <div className="space-y-1.5">
+                    <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="repuestos">Repuestos</label>
+                    <div className="relative">
+                        <div className="absolute top-3 left-3 text-gray-400"><Wrench size={18} /></div>
+                        <textarea id="repuestos" value={formData.repuestos} onChange={handleInputChange} rows="3" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium resize-none"></textarea>
+                    </div>
+                </div>
+
+                <div className="space-y-1.5">
                     <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="costo">Costo</label>
                     <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><DollarSign size={18} /></div>
@@ -131,7 +142,84 @@ export default function EditRecord({ record, onBack, onUpdate }) {
             </div>
 
             {/* Footer Action */}
-            <div className="p-4 border-t border-gray-100 bg-gray-50">
+            <div className="p-4 border-top border-gray-100 bg-gray-50 grid grid-cols-2 gap-3">
+                <button
+                    onClick={() => {
+                        const doc = new jsPDF();
+                        const currentDate = new Date().toLocaleDateString();
+
+                        // Header / Logo area
+                        doc.setFillColor(37, 99, 235); // Blue header
+                        doc.rect(0, 0, 210, 40, 'F');
+                        doc.setTextColor(255, 255, 255);
+                        doc.setFontSize(22);
+                        doc.setFont("helvetica", "bold");
+                        doc.text("TALLER JYM", 105, 20, { align: "center" });
+                        doc.setFontSize(12);
+                        doc.setFont("helvetica", "normal");
+                        doc.text("Reporte de Servicio", 105, 30, { align: "center" });
+
+                        // Details
+                        doc.setTextColor(0, 0, 0);
+                        doc.setFontSize(12);
+
+                        let yPos = 55;
+                        const lineHeight = 10;
+
+                        doc.setFont("helvetica", "bold");
+                        doc.text(`Fecha: ${currentDate}`, 20, yPos);
+                        yPos += lineHeight * 1.5;
+
+                        const addField = (label, value) => {
+                            doc.setFont("helvetica", "bold");
+                            doc.text(`${label}:`, 20, yPos);
+                            doc.setFont("helvetica", "normal");
+                            doc.text(`${value || ''}`, 70, yPos);
+                            yPos += lineHeight;
+                        };
+
+                        addField("Cliente", formData.cliente);
+                        addField("Contacto", formData.contacto);
+                        addField("Placa", formData.placa);
+                        addField("Kilometraje", formData.kilometraje + " Km");
+                        addField("Estado", formData.estado);
+
+                        yPos += lineHeight * 0.5;
+
+                        doc.setFont("helvetica", "bold");
+                        doc.text("Trabajo Realizado:", 20, yPos);
+                        yPos += lineHeight;
+                        doc.setFont("helvetica", "normal");
+
+                        const splitWork = doc.splitTextToSize(formData.trabajo || '', 170);
+                        doc.text(splitWork, 20, yPos);
+                        yPos += (splitWork.length * 7) + lineHeight;
+
+                        if (formData.repuestos) {
+                            doc.setFont("helvetica", "bold");
+                            doc.text("Repuestos Utilizados:", 20, yPos);
+                            yPos += lineHeight;
+                            doc.setFont("helvetica", "normal");
+
+                            const splitParts = doc.splitTextToSize(formData.repuestos, 170);
+                            doc.text(splitParts, 20, yPos);
+                            yPos += (splitParts.length * 7) + lineHeight;
+                        }
+
+                        doc.setFont("helvetica", "bold");
+                        doc.text(`Costo Total: $${formData.costo}`, 20, yPos);
+
+                        doc.setFontSize(10);
+                        doc.setTextColor(100, 100, 100);
+                        doc.text("Taller JYM - Servicio Profesional", 105, 280, { align: "center" });
+
+                        doc.save(`Reporte_JYM_${formData.placa || 'Vehiculo'}.pdf`);
+                    }}
+                    className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 transition-all active:scale-95"
+                >
+                    <FileDown size={20} />
+                    <span>Generar Reporte</span>
+                </button>
                 <button
                     onClick={handleSave}
                     disabled={isSaving}
