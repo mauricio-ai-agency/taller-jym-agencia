@@ -136,7 +136,9 @@ export default function History({ onEditRecord }) {
 
                             {/* Info */}
                             <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-gray-800 text-lg leading-tight truncate">{registro.placa}</h4>
+                                <h4 className="font-bold text-gray-800 text-lg leading-tight truncate">
+                                    {registro.placa} <span className="text-gray-600 font-semibold text-base">- {registro.modelo || 'Sin Modelo'}</span>
+                                </h4>
                                 <p className="text-sm text-gray-600 truncate flex items-center gap-1">
                                     <User size={12} /> {registro.cliente}
                                 </p>
