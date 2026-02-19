@@ -10,19 +10,16 @@ function App() {
   const [activeTab, setActiveTab] = useState('new'); // 'new' | 'history' | 'edit'
   const [editingRecord, setEditingRecord] = useState(null);
 
-  // Initial state for dynamic rows
-  const initialRow = { description: '', price: '' };
-
   const [formData, setFormData] = useState({
     codigo_id: '',
     plate: '',
     client: '',
     model: '',
-    work: [initialRow], // Array of objects
-    cost: 0, // Calculated automatically
+    work: [{ description: '', price: '' }], // Independent array
+    cost: 0,
     contact: '',
     mileage: '',
-    repuestos: [initialRow] // Array of objects
+    repuestos: [{ description: '', price: '' }] // Independent array
   });
   const [imageFile, setImageFile] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
