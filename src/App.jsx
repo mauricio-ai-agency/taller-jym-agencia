@@ -14,6 +14,7 @@ function App() {
   const initialRow = { description: '', price: '' };
 
   const [formData, setFormData] = useState({
+    codigo_id: '',
     plate: '',
     client: '',
     model: '',
@@ -97,6 +98,7 @@ function App() {
         .from('registros')
         .insert([
           {
+            codigo_id: formData.codigo_id,
             placa: formData.plate,
             cliente: formData.client,
             modelo: formData.model,
@@ -117,6 +119,7 @@ function App() {
 
       // Reset form
       setFormData({
+        codigo_id: '',
         plate: '',
         client: '',
         model: '',
@@ -177,7 +180,7 @@ function App() {
       yPos += lineHeight;
     };
 
-    // ID would be ideal here, but for new records we don't have it.
+    if (formData.codigo_id) addField("Código/ID", formData.codigo_id);
     addField("Cliente", formData.client);
     addField("Contacto", formData.contact);
     addField("Vehículo", formData.model);
@@ -339,6 +342,14 @@ function App() {
               {/* Section: Vehicle Info */}
               <div className="space-y-4">
                 <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider border-b pb-1">Datos del Vehículo</h3>
+
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="codigo_id">Código / ID</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><FileText size={18} /></div>
+                    <input type="text" id="codigo_id" value={formData.codigo_id} onChange={handleInputChange} placeholder="Ej: V-001" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold uppercase" />
+                  </div>
+                </div>
 
                 <div className="space-y-1.5">
                   <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="plate">Placa</label>

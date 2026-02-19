@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, ArrowLeft, Car, User, Phone, Wrench, DollarSign, Activity, FileDown, Plus, Trash2 } from 'lucide-react';
+import { Save, ArrowLeft, Car, User, Phone, Wrench, DollarSign, Activity, FileDown, Plus, Trash2, FileText } from 'lucide-react';
 import { jsPDF } from "jspdf";
 import { supabase } from '../supabaseClient';
 
@@ -18,6 +18,7 @@ export default function EditRecord({ record, onBack, onUpdate }) {
     };
 
     const [formData, setFormData] = useState({
+        codigo_id: record.codigo_id || '',
         placa: record.placa || '',
         cliente: record.cliente || '',
         contacto: record.contacto || '',
@@ -89,6 +90,7 @@ export default function EditRecord({ record, onBack, onUpdate }) {
             const { error } = await supabase
                 .from('registros')
                 .update({
+                    codigo_id: formData.codigo_id,
                     placa: formData.placa,
                     cliente: formData.cliente,
                     contacto: formData.contacto,
@@ -148,6 +150,7 @@ export default function EditRecord({ record, onBack, onUpdate }) {
         };
 
         addField("ID Referencia", record.id);
+        if (formData.codigo_id) addField("Código/ID", formData.codigo_id);
         addField("Cliente", formData.cliente);
         addField("Contacto", formData.contacto);
         addField("Placa", formData.placa);
@@ -215,7 +218,16 @@ export default function EditRecord({ record, onBack, onUpdate }) {
             <div className="flex-1 overflow-y-auto p-6 space-y-5">
 
                 {/* Placa & Estado & Km */}
+                {/* Placa & Estado & Km */}
                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5 col-span-2">
+                        <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="codigo_id">Código / ID</label>
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><FileText size={18} /></div>
+                            <input type="text" id="codigo_id" value={formData.codigo_id} onChange={handleInputChange} placeholder="Ej: V-001" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold uppercase" />
+                        </div>
+                    </div>
+
                     <div className="space-y-1.5">
                         <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="placa">Placa</label>
                         <div className="relative">

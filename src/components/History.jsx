@@ -78,7 +78,8 @@ export default function History({ onEditRecord }) {
         const matchesPlate = r.placa?.toLowerCase().includes(term);
         const matchesClient = r.cliente?.toLowerCase().includes(term);
         const matchesId = r.id?.toString().includes(term);
-        return matchesPlate || matchesClient || matchesId;
+        const matchesCodigoId = r.codigo_id?.toLowerCase().includes(term);
+        return matchesPlate || matchesClient || matchesId || matchesCodigoId;
     });
 
     if (loading) return <div className="text-center p-10 text-gray-500">Cargando historial...</div>;
@@ -140,6 +141,11 @@ export default function History({ onEditRecord }) {
 
                             {/* Info */}
                             <div className="flex-1 min-w-0">
+                                {registro.codigo_id && (
+                                    <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md mb-1 inline-block">
+                                        ID: {registro.codigo_id}
+                                    </span>
+                                )}
                                 <h4 className="font-bold text-gray-800 text-lg leading-tight truncate">
                                     {registro.placa} <span className="text-gray-600 font-semibold text-base">- {registro.modelo || 'Sin Modelo'}</span>
                                 </h4>
