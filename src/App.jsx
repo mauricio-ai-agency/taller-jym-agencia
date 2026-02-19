@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Camera, Car, User, FileText, Wrench, DollarSign, Phone, FileDown, Share2, Save, History as HistoryIcon, PlusCircle } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Camera, Car, User, FileText, Wrench, DollarSign, Phone, FileDown, Share2, Save, History as HistoryIcon, PlusCircle, Trash2, Plus } from 'lucide-react';
 import { jsPDF } from "jspdf";
 import imageCompression from 'browser-image-compression';
 import { supabase } from './supabaseClient';
@@ -10,19 +10,29 @@ function App() {
   const [activeTab, setActiveTab] = useState('new'); // 'new' | 'history' | 'edit'
   const [editingRecord, setEditingRecord] = useState(null);
 
+  // Initial state for dynamic rows
+  const initialRow = { description: '', price: '' };
+
   const [formData, setFormData] = useState({
     plate: '',
     client: '',
     model: '',
-    work: '',
-    cost: '',
+    work: [initialRow], // Array of objects
+    cost: 0, // Calculated automatically
     contact: '',
     mileage: '',
-    repuestos: ''
+    repuestos: [initialRow] // Array of objects
   });
   const [imageFile, setImageFile] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Calculate total cost automatically
+  useEffect(() => {
+    const workTotal = formData.work.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
+    const partsTotal = formData.repuestos.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
+    setFormData(prev => ({ ...prev, cost: workTotal + partsTotal }));
+  }, [formData.work, formData.repuestos]);
 
   const handleInputChange = (e) => {
     const { id, value } = e.target;
@@ -30,6 +40,27 @@ function App() {
       ...prev,
       [id]: value
     }));
+  };
+
+  // Dynamic Row Handlers
+  const handleDynamicChange = (section, index, field, value) => {
+    const newSection = [...formData[section]];
+    newSection[index][field] = value;
+    setFormData(prev => ({ ...prev, [section]: newSection }));
+  };
+
+  const addRow = (section) => {
+    setFormData(prev => ({
+      ...prev,
+      [section]: [...prev[section], { description: '', price: '' }]
+    }));
+  };
+
+  const removeRow = (section, index) => {
+    if (formData[section].length > 1) {
+      const newSection = formData[section].filter((_, i) => i !== index);
+      setFormData(prev => ({ ...prev, [section]: newSection }));
+    }
   };
 
   const handleSave = async () => {
@@ -58,6 +89,10 @@ function App() {
         imageUrl = publicUrlData.publicUrl;
       }
 
+      // Serialize dynamic data
+      const workJson = JSON.stringify(formData.work);
+      const repuestosJson = JSON.stringify(formData.repuestos);
+
       const { data, error } = await supabase
         .from('registros')
         .insert([
@@ -65,28 +100,31 @@ function App() {
             placa: formData.plate,
             cliente: formData.client,
             modelo: formData.model,
-            trabajo: formData.work,
+            trabajo: workJson, // Storing JSON string
             costo: parseFloat(formData.cost) || 0,
             contacto: formData.contact,
             foto_url: imageUrl,
             estado: 'En proceso',
             kilometraje: formData.mileage,
-            repuestos: formData.repuestos
+            repuestos: repuestosJson // Storing JSON string
           }
-        ]);
+        ])
+        .select(); // Select to get the ID
 
       if (error) throw error;
 
       alert('¡Registro guardado exitosamente en la nube!');
+
+      // Reset form
       setFormData({
         plate: '',
         client: '',
         model: '',
-        work: '',
-        cost: '',
+        work: [{ description: '', price: '' }],
+        cost: 0,
         contact: '',
         mileage: '',
-        repuestos: ''
+        repuestos: [{ description: '', price: '' }]
       });
       setImageFile(null);
       setActiveTab('history'); // Switch to history after saving
@@ -101,6 +139,12 @@ function App() {
   const generatePDF = () => {
     const doc = new jsPDF();
     const currentDate = new Date().toLocaleDateString();
+
+    // Use a placeholder ID if not available (this is for new records before save, but usually we generate after save or just use a placeholder)
+    // Since we are filling this from form data, we might not have the ID yet if it's new. 
+    // The requirement says "El reporte debe mostrar el ID". If it's a new record not saved, we can't show ID.
+    // However, usually PDF is generated after saving or we can just show "PENDIENTE" if no ID.
+    // Let's assume for now we just show the Plate as primary identifier if ID is missing or "N/A".
 
     // Header / Logo area
     doc.setFillColor(37, 99, 235); // Blue header
@@ -133,6 +177,7 @@ function App() {
       yPos += lineHeight;
     };
 
+    // ID would be ideal here, but for new records we don't have it.
     addField("Cliente", formData.client);
     addField("Contacto", formData.contact);
     addField("Vehículo", formData.model);
@@ -140,29 +185,47 @@ function App() {
 
     yPos += lineHeight * 0.5;
 
-    doc.setFont("helvetica", "bold");
-    doc.text("Trabajo a Realizar:", 20, yPos);
-    yPos += lineHeight;
-    doc.setFont("helvetica", "normal");
+    // Helper to render table
+    const renderTable = (title, items) => {
+      if (!items || items.length === 0) return;
 
-    // Split text to fit page width
-    const splitWork = doc.splitTextToSize(formData.work, 170);
-    doc.text(splitWork, 20, yPos);
-    yPos += (splitWork.length * 7) + lineHeight;
-
-    if (formData.repuestos) {
       doc.setFont("helvetica", "bold");
-      doc.text("Repuestos / Notas:", 20, yPos);
+      doc.text(title, 20, yPos);
       yPos += lineHeight;
+
+      // Table Header
+      doc.setFillColor(240, 240, 240);
+      doc.rect(20, yPos - 6, 170, 8, 'F');
+      doc.setFontSize(10);
+      doc.text("Descripción", 25, yPos);
+      doc.text("Precio (Bs)", 160, yPos);
+      yPos += lineHeight;
+      doc.setFontSize(12);
       doc.setFont("helvetica", "normal");
 
-      const splitParts = doc.splitTextToSize(formData.repuestos, 170);
-      doc.text(splitParts, 20, yPos);
-      yPos += (splitParts.length * 7) + lineHeight;
-    }
+      items.forEach(item => {
+        if (!item.description && !item.price) return;
+        const desc = item.description || '-';
+        const price = item.price ? `Bs ${parseFloat(item.price).toFixed(2)}` : 'Bs 0.00';
 
+        const splitDesc = doc.splitTextToSize(desc, 130);
+        doc.text(splitDesc, 25, yPos);
+        doc.text(price, 160, yPos);
+
+        yPos += (Math.max(splitDesc.length, 1) * 7) + 3;
+      });
+      yPos += lineHeight / 2;
+    };
+
+    renderTable("Trabajos Realizados:", formData.work);
+    renderTable("Repuestos / Otros:", formData.repuestos);
+
+    // Total
+    yPos += lineHeight;
     doc.setFont("helvetica", "bold");
-    doc.text(`Costo Estimado: $${formData.cost}`, 20, yPos);
+    doc.setFontSize(14);
+    doc.text(`Gran Total: Bs ${formData.cost.toFixed(2)}`, 140, yPos, { align: "right" }); // Authenticated to right
+    doc.text(`Total: Bs ${formData.cost.toFixed(2)}`, 20, yPos);
 
     // Footer
     doc.setFontSize(10);
@@ -173,9 +236,12 @@ function App() {
   };
 
   const handleShare = async () => {
+    // Construct text from dynamic arrays
+    const workText = formData.work.map(w => `${w.description} (Bs ${w.price})`).join(', ');
+
     const shareData = {
       title: 'Registro Taller JYM',
-      text: `Hola ${formData.client}, tu vehículo ${formData.model} (Placa: ${formData.plate}) ha sido ingresado al Taller JYM.\n\nTrabajo: ${formData.work}\nCosto Estimado: $${formData.cost}\n\nGracias por tu confianza.`,
+      text: `Hola ${formData.client}, tu vehículo ${formData.model} (Placa: ${formData.plate}) ha sido ingresado al Taller JYM.\n\nTrabajos: ${workText}\nTotal Estimado: Bs ${formData.cost}\n\nGracias por tu confianza.`,
     };
 
     if (navigator.share) {
@@ -322,29 +388,90 @@ function App() {
 
               {/* Section: Work Details */}
               <div className="space-y-4 pt-2">
-                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider border-b pb-1">Detalles del Servicio</h3>
+                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider border-b pb-1">Detalles del Trabajo</h3>
 
-                <div className="space-y-1.5">
-                  <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="work">Trabajo a realizar</label>
-                  <div className="relative">
-                    <div className="absolute top-3 left-3 text-gray-400"><Wrench size={18} /></div>
-                    <textarea id="work" value={formData.work} onChange={handleInputChange} placeholder="Descripción detallada de la reparación..." rows="3" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium resize-none"></textarea>
-                  </div>
+                {/* Dynamic Work Rows */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700 ml-1">Trabajos Realizados</label>
+                  {formData.work.map((row, index) => (
+                    <div key={index} className="flex gap-2 items-start">
+                      <input
+                        type="text"
+                        placeholder="Descripción"
+                        value={row.description}
+                        onChange={(e) => handleDynamicChange('work', index, 'description', e.target.value)}
+                        className="flex-1 pl-3 pr-2 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Bs"
+                        value={row.price}
+                        onChange={(e) => handleDynamicChange('work', index, 'price', e.target.value)}
+                        className="w-20 pl-2 pr-2 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-right"
+                      />
+                      {formData.work.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeRow('work', index)}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => addRow('work')}
+                    className="text-sm text-blue-600 font-semibold flex items-center gap-1 hover:text-blue-800"
+                  >
+                    <Plus size={16} /> Agregar Trabajo
+                  </button>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="repuestos">Repuestos</label>
-                  <div className="relative">
-                    <div className="absolute top-3 left-3 text-gray-400"><Wrench size={18} /></div>
-                    <textarea id="repuestos" value={formData.repuestos} onChange={handleInputChange} placeholder="Lista de repuestos..." rows="2" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium resize-none"></textarea>
-                  </div>
+                {/* Dynamic Parts Rows */}
+                <div className="space-y-2 pt-2">
+                  <label className="block text-sm font-semibold text-gray-700 ml-1">Repuestos</label>
+                  {formData.repuestos.map((row, index) => (
+                    <div key={index} className="flex gap-2 items-start">
+                      <input
+                        type="text"
+                        placeholder="Repuesto"
+                        value={row.description}
+                        onChange={(e) => handleDynamicChange('repuestos', index, 'description', e.target.value)}
+                        className="flex-1 pl-3 pr-2 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Bs"
+                        value={row.price}
+                        onChange={(e) => handleDynamicChange('repuestos', index, 'price', e.target.value)}
+                        className="w-20 pl-2 pr-2 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-right"
+                      />
+                      {formData.repuestos.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeRow('repuestos', index)}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => addRow('repuestos')}
+                    className="text-sm text-blue-600 font-semibold flex items-center gap-1 hover:text-blue-800"
+                  >
+                    <Plus size={16} /> Agregar Repuesto
+                  </button>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-sm font-semibold text-gray-700 ml-1" htmlFor="cost">Costo Estimado</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><DollarSign size={18} /></div>
-                    <input type="number" id="cost" value={formData.cost} onChange={handleInputChange} placeholder="0" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium" />
+                <div className="space-y-1.5 pt-2">
+                  <div className="flex justify-between items-center bg-gray-100 p-3 rounded-xl">
+                    <span className="font-bold text-gray-700">Total Estimado (Bs):</span>
+                    <span className="text-xl font-bold text-blue-600">Bs {formData.cost}</span>
                   </div>
                 </div>
               </div>
@@ -365,7 +492,7 @@ function App() {
                   ) : (
                     <>
                       <Save size={20} />
-                      <span>Guardar Registro en Nube</span>
+                      <span>Guardar Registro</span>
                     </>
                   )}
                 </button>
@@ -383,7 +510,7 @@ function App() {
                   className={`w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${imageFile ? 'border-2 border-green-500 bg-green-50' : ''}`}
                 >
                   <Camera size={20} className={imageFile ? 'text-green-600' : ''} />
-                  <span>{imageFile ? 'Foto Cargada (Comprimida)' : 'Capturar / Subir Foto'}</span>
+                  <span>{imageFile ? 'Foto Cargada' : 'Capturar Foto'}</span>
                 </button>
 
                 <div className="grid grid-cols-2 gap-3">

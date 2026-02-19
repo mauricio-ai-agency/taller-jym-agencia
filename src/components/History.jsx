@@ -73,9 +73,13 @@ export default function History({ onEditRecord }) {
         }
     };
 
-    const filteredRegistros = registros.filter(r =>
-        r.placa.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredRegistros = registros.filter(r => {
+        const term = searchTerm.toLowerCase();
+        const matchesPlate = r.placa?.toLowerCase().includes(term);
+        const matchesClient = r.cliente?.toLowerCase().includes(term);
+        const matchesId = r.id?.toString().includes(term);
+        return matchesPlate || matchesClient || matchesId;
+    });
 
     if (loading) return <div className="text-center p-10 text-gray-500">Cargando historial...</div>;
     if (error) return <div className="text-center p-10 text-red-500">Error: {error}</div>;
@@ -90,7 +94,7 @@ export default function History({ onEditRecord }) {
                     </div>
                     <input
                         type="text"
-                        placeholder="Buscar por placa..."
+                        placeholder="Buscar por placa, cliente o ID..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none uppercase font-medium"
